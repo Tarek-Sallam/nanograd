@@ -18,7 +18,7 @@ impl<T> Tensor<T> {
         Tensor { data, shape, dtype }
     }
 
-    pub fn shape(&self) -> &[T] {
+    pub fn shape(&self) -> &[u32] {
         &self.shape[..]
     }
 }
