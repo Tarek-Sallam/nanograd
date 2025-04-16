@@ -1,4 +1,4 @@
-enum DataType {
+pub enum DataType {
     Int32,
     Int64,
     UInt32,
@@ -7,14 +7,14 @@ enum DataType {
     Float64,
 }
 
-struct Tensor<T> {
+pub struct Tensor<T> {
     data: Vec<T>,
     shape: Vec<u32>,
     dtype: DataType,
 }
 
 impl<T> Tensor<T> {
-    fn new(data: Vec<T>, shape: Vec<u32>, dtype: DataType) -> Self {
+    pub fn new(data: Vec<T>, shape: Vec<u32>, dtype: DataType) -> Self {
         Tensor { data, shape, dtype }
     }
 }
