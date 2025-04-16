@@ -1,6 +1,14 @@
 enum DataType {
-    uint32,
-    uint64,
-    float32,
-    float64,
+    Int32,
+    Int64,
+    UInt32,
+    UInt64,
+    Float32,
+    Float64,
+}
+
+struct Tensor<T> {
+    dtype: DataType,
+    data: Vec<T>,
+    shape: Vec<u32>,
 }
