@@ -17,4 +17,8 @@ impl<T> Tensor<T> {
     pub fn new(data: Vec<T>, shape: Vec<u32>, dtype: DataType) -> Self {
         Tensor { data, shape, dtype }
     }
+
+    pub fn shape(&self) -> &[T] {
+        &self.shape[..]
+    }
 }
