@@ -13,7 +13,7 @@ struct Tensor<T> {
     dtype: DataType,
 }
 
-impl Tensor<T> {
+impl<T> Tensor<T> {
     fn new(data: Vec<T>, shape: Vec<u32>, dtype: DataType) -> Self {
         Tensor { data, shape, dtype }
     }
