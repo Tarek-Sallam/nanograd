@@ -8,7 +8,13 @@ enum DataType {
 }
 
 struct Tensor<T> {
-    dtype: DataType,
     data: Vec<T>,
     shape: Vec<u32>,
+    dtype: DataType,
+}
+
+impl Tensor {
+    fn new(data: Vec<T>, shape: Vec<u32>, dtype: DataType) -> Self {
+        Tensor(data, shape, dtype)
+    }
 }
