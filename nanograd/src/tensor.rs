@@ -1,49 +1,54 @@
 use crate::ops::Op;
-use std::rc::Rc;
+use std::sync::Arc;
 
-pub enum DataType {
-    Int32,
-    Int64,
-    UInt32,
-    UInt64,
-    Float32,
-    Float64,
-}
-
-// Tensor struct
-pub struct Tensor<T> {
+// data for the tensor as a struct
+pub struct TensorData<T> {
     data: Vec<T>,
-    shape: Vec<u32>,
-    op: Option<Rc<Op<T>>>,
 }
 
-// TensorView struct which provides a non-contiguous view of a Tensor
-pub struct TensorView<'a, T> {
-    tensor_ref: &'a Tensor<T>,
-    shape: Vec<u32>,
-    strides: Vec<usize>,
-    offset: usize,
-}
-
-// Tensor struct implementations
-impl<T> Tensor<T> {
-    // create a Tensor
-    pub fn new(data: Vec<T>, shape: Vec<u32>, op: Option<Rc<Op<T>>>) -> Self {
-        Tensor { data, shape, op }
-    }
-    // return the shape
-    pub fn shape(&self) -> &[u32] {
-        &self.shape[..]
+// methods for the data struct
+impl<T> TensorData<T> {
+    pub fn new(data: Vec<T>) -> Self {
+        TensorData { data: data }
     }
 
     pub fn data(&self) -> &[T] {
         &self.data
     }
+}
 
-    pub fn get<'a>(&'a self, start: &[u32], stop: &[u32]) -> Option<TensorView<'a, T>> {
-        if start.len() != stop.len() {
-            return None;
+// core tensor kernel
+pub struct TensorKernel<T> {
+    data: TensorData<T>,
+    shape: Vec<usize>,
+    op: Option<Arc<Op<T>>>,
+}
+
+// tensor is a reference counter of the tensor kernel
+pub type Tensor<T> = Arc<TensorKernel<T>>;
+
+pub fn tensor<T>(data: Vec<T>, shape: Vec<usize>) -> Tensor<T> {
+    Arc::new(TensorKernel::new(data, shape, None))
+}
+
+// methods for the tensor kernel
+impl<T> TensorKernel<T> {
+    // creates a new tensor kernel
+    pub fn new(data: Vec<T>, shape: Vec<usize>, op: Option<Arc<Op<T>>>) -> Self {
+        TensorKernel {
+            data: TensorData::new(data),
+            shape: shape,
+            op: op,
         }
-        // Need to implement this function that calculates strides + offset and returns view
+    }
+
+    // returns the data from the tensor kernel
+    pub fn data(&self) -> &[T] {
+        self.data.data()
+    }
+
+    // returns the shape of the tensor kernel
+    pub fn shape(&self) -> &[usize] {
+        &self.shape
     }
 }

@@ -1,18 +1,15 @@
-use nanograd::tensor::DataType;
-use nanograd::tensor::Tensor;
+use nanograd::ops::TensorOps;
+use nanograd::tensor;
 
 #[test]
-fn create_tensor() {
-    let data = vec![1, 2, 3, 4, 5];
-    let shape = vec![5];
-    let t = Tensor::new(data, shape, DataType::Int64);
-    println!("{:?}", t.shape())
-}
 
 fn add_tensor() {
-    let data1 = vec![1, 2, 3, 4, 5];
-    let shape = vec![5];
-    let data2 = vec![5, 4, 3, 2, 1];
-    let t = Tensor::new(data, shape, None);
-    let t2 = Tensor::new(data2, shape, None);
+    let data1 = vec![1, 2, 3, 4];
+    let data2 = vec![3, 2, 1, 0];
+    let tensor1 = tensor::tensor(data1, vec![4]);
+    let tensor2 = tensor::tensor(data2, vec![4]);
+    let tensor3 = tensor1.add(&tensor2);
+    println!("`{:?}`", tensor3.data());
+    println!("`{:?}`", tensor1.data());
+    println!("`{:?}`", tensor2.data());
 }
