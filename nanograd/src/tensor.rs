@@ -51,4 +51,8 @@ impl<T> TensorKernel<T> {
     pub fn shape(&self) -> &[usize] {
         &self.shape
     }
+
+    pub fn op(&self) -> Option<&Arc<Op<T>>> {
+        self.op.as_ref()
+    }
 }
