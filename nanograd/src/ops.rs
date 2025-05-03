@@ -47,8 +47,13 @@ impl<T> TensorOps<T> for Tensor<T> {
 
         // construct the new operation with references to parent tensors
         let op = Arc::new(Op::new(OpType::Add, vec![self.clone(), other.clone()]));
-
+        let track_grad = self.track_grad() || other.track_grad();
         // construct and return the new tensor kernel as the result of adding the two tensors
-        Arc::new(TensorKernel::new(data, self.shape().to_vec(), Some(op)))
+        Arc::new(TensorKernel::new(
+            data,
+            self.shape().to_vec(),
+            track_grad,
+            Some(op),
+        ))
     }
 }
