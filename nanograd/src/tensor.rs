@@ -47,13 +47,14 @@ impl<T> TensorKernel<T> {
         }
     }
 
+    // returns the id of the tensor kernel
+    pub fn id(&self) -> usize {
+        self.id
+    }
+
     // returns the data from the tensor kernel
     pub fn data(&self) -> &[T] {
         self.data.data()
-    }
-
-    pub fn track_grad(&self) -> bool {
-        self.track_grad
     }
 
     // returns the shape of the tensor kernel
@@ -61,6 +62,12 @@ impl<T> TensorKernel<T> {
         &self.shape
     }
 
+    // returns if the tensor kernel gradient tracking is on/off
+    pub fn track_grad(&self) -> bool {
+        self.track_grad
+    }
+
+    // returns a reference to the operation that created the tensor
     pub fn op(&self) -> Option<&Arc<Op<T>>> {
         self.op.as_ref()
     }
