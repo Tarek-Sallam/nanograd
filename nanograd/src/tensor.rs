@@ -1,6 +1,5 @@
 use crate::ops::ops::Op;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 // data for the tensor as a struct
 pub struct TensorData<T> {
@@ -20,11 +19,11 @@ impl<T> TensorData<T> {
 
 // core tensor kernel
 pub struct TensorKernel<T> {
-    id: usize,
     data: TensorData<T>,
     shape: Vec<usize>,
     track_grad: bool,
     op: Option<Arc<Op<T>>>,
+    grad: Option<Tensor<T>>,
 }
 
 // tensor is a reference counter of the tensor kernel
@@ -39,17 +38,12 @@ impl<T> TensorKernel<T> {
     // creates a new tensor kernel
     pub fn new(data: Vec<T>, shape: Vec<usize>, track_grad: bool, op: Option<Arc<Op<T>>>) -> Self {
         TensorKernel {
-            id: AtomicUsize::new(0).fetch_add(1, Ordering::SeqCst),
             data: TensorData::new(data),
             shape,
             track_grad,
             op,
+            grad: None,
         }
-    }
-
-    // returns the id of the tensor kernel
-    pub fn id(&self) -> usize {
-        self.id
     }
 
     // returns the data from the tensor kernel
