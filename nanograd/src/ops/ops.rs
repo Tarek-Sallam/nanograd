@@ -1,3 +1,4 @@
+use crate::ops::grads::{GradFn, add_grad};
 use crate::tensor::Tensor;
 use crate::tensor::TensorKernel;
 
@@ -9,6 +10,16 @@ pub enum OpType {
     // Add more operations as needed
 }
 
+impl OpType {
+    pub fn grad_fn<T>(&self) -> GradFn<T>
+    where
+        T: Copy + Default + std::ops::Add<Output = T> + std::ops::Mul<Output = T> + 'static,
+    {
+        match self {
+            OpType::Add => Box::new(add_grad::<T>),
+        }
+    }
+}
 // operation struct
 pub struct Op<T> {
     op_type: OpType,
@@ -20,6 +31,13 @@ impl<T> Op<T> {
     // creates a new operation
     pub fn new(op_type: OpType, inputs: Vec<Tensor<T>>) -> Self {
         Op { op_type, inputs }
+    }
+
+    pub fn grad_fn(&self, output_grad: Option<&Tensor<T>>)
+    where
+        T: Copy + Default + std::ops::Add<Output = T> + std::ops::Mul<Output = T> + 'static,
+    {
+        self.op_type.grad_fn()(output_grad, &self.inputs);
     }
 }
 

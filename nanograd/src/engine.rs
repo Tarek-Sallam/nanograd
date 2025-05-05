@@ -1,10 +1,25 @@
 use crate::tensor::Tensor;
-use std::collections::HashMap;
 
 pub struct Engine;
 
 impl Engine {
-    pub fn backward<T>(output: &Tensor<T>, wrt: &Tensor<T>) -> Vec<T>
-    where:
-        T: Copy + Default + std::ops::Add<Output = T> + From<f32>
+    pub fn backward<T>(output: &Tensor<T>)
+    where
+        T: Copy
+            + Default
+            + std::ops::Add<Output = T>
+            + std::ops::Mul<Output = T>
+            + From<f32>
+            + 'static,
+    {
+        let mut stack = vec![output.clone()];
+
+        while let Some(tensor) = stack.pop() {
+            let output_grad = tensor.grad();
+
+            if let Some(op) = tensor.op() {
+                op.grad_fn(output_grad);
+            }
+        }
+    }
 }

@@ -65,4 +65,8 @@ impl<T> TensorKernel<T> {
     pub fn op(&self) -> Option<&Arc<Op<T>>> {
         self.op.as_ref()
     }
+
+    pub fn grad(&self) -> Option<&Tensor<T>> {
+        self.grad.as_ref()
+    }
 }
