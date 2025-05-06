@@ -14,7 +14,12 @@ pub enum OpType {
 impl OpType {
     pub fn grad_fn<T>(&self) -> GradFn<T>
     where
-        T: Copy + Default + std::ops::Add<Output = T> + std::ops::Mul<Output = T> + 'static,
+        T: Copy
+            + std::ops::Add<Output = T>
+            + std::ops::Mul<Output = T>
+            + std::ops::Add<Output = T>
+            + std::ops::AddAssign
+            + 'static,
     {
         match self {
             OpType::Add => Box::new(add_grad::<T>),

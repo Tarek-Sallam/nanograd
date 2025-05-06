@@ -66,7 +66,13 @@ impl<T> TensorKernel<T> {
         self.op.as_ref()
     }
 
-    pub fn grad(&self) -> Option<&Tensor<T>> {
+    pub fn get_grad(&self) -> Option<&Tensor<T>> {
         self.grad.as_ref()
+    }
+
+    pub fn set_grad(&mut self, grad: Tensor<T>) {
+        if self.track_grad {
+            self.grad = Some(grad);
+        }
     }
 }
