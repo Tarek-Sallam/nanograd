@@ -18,8 +18,7 @@ impl OpType {
             + std::ops::Add<Output = T>
             + std::ops::Mul<Output = T>
             + std::ops::Add<Output = T>
-            + std::ops::AddAssign
-            + 'static,
+            + std::ops::AddAssign,
     {
         match self {
             OpType::Add => Box::new(add_grad::<T>),

@@ -1,6 +1,6 @@
 use crate::tensor::Tensor;
 
-pub type GradFn<T> = Box<dyn Fn(Option<&Tensor<T>>, &mut [Tensor<T>])>;
+pub type GradFn<T> = Box<dyn Fn(Option<&Tensor<T>>, &mut [Tensor<T>]) -> () + 'static>;
 
 pub fn add_grad<T>(output_grad: Option<&Tensor<T>>, inputs: &mut [Tensor<T>])
 where
