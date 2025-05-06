@@ -1,5 +1,5 @@
 use crate::ops::ops::Op;
-use std::sync::Arc;
+use std::rc::Rc;
 
 // data for the tensor as a struct
 pub struct TensorData<T> {
@@ -22,21 +22,21 @@ pub struct TensorKernel<T> {
     data: TensorData<T>,
     shape: Vec<usize>,
     track_grad: bool,
-    op: Option<Arc<Op<T>>>,
+    op: Option<Rc<Op<T>>>,
     grad: Option<Tensor<T>>,
 }
 
 // tensor is a reference counter of the tensor kernel
-pub type Tensor<T> = Arc<TensorKernel<T>>;
+pub type Tensor<T> = Rc<TensorKernel<T>>;
 
 pub fn tensor<T>(data: Vec<T>, shape: Vec<usize>, track_grad: bool) -> Tensor<T> {
-    Arc::new(TensorKernel::new(data, shape, track_grad, None))
+    Rc::new(TensorKernel::new(data, shape, track_grad, None))
 }
 
 // methods for the tensor kernel
 impl<T> TensorKernel<T> {
     // creates a new tensor kernel
-    pub fn new(data: Vec<T>, shape: Vec<usize>, track_grad: bool, op: Option<Arc<Op<T>>>) -> Self {
+    pub fn new(data: Vec<T>, shape: Vec<usize>, track_grad: bool, op: Option<Rc<Op<T>>>) -> Self {
         TensorKernel {
             data: TensorData::new(data),
             shape,
@@ -62,7 +62,7 @@ impl<T> TensorKernel<T> {
     }
 
     // returns a reference to the operation that created the tensor
-    pub fn op(&self) -> Option<&Arc<Op<T>>> {
+    pub fn op(&self) -> Option<&Rc<Op<T>>> {
         self.op.as_ref()
     }
 
