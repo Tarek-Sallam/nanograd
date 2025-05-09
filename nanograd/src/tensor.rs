@@ -30,19 +30,25 @@ pub struct TensorKernel<T> {
 pub type Tensor<T> = Rc<TensorKernel<T>>;
 
 pub fn tensor<T>(data: Vec<T>, shape: Vec<usize>, track_grad: bool) -> Tensor<T> {
-    Rc::new(TensorKernel::new(data, shape, track_grad, None))
+    Rc::new(TensorKernel::new(data, shape, track_grad, None, None))
 }
 
 // methods for the tensor kernel
 impl<T> TensorKernel<T> {
     // creates a new tensor kernel
-    pub fn new(data: Vec<T>, shape: Vec<usize>, track_grad: bool, op: Option<Rc<Op<T>>>) -> Self {
+    pub fn new(
+        data: Vec<T>,
+        shape: Vec<usize>,
+        track_grad: bool,
+        op: Option<Rc<Op<T>>>,
+        grad: Option<Rc<TensorKernel<T>>>,
+    ) -> Self {
         TensorKernel {
             data: TensorData::new(data),
             shape,
             track_grad,
             op,
-            grad: None,
+            grad,
         }
     }
 
@@ -62,17 +68,11 @@ impl<T> TensorKernel<T> {
     }
 
     // returns a reference to the operation that created the tensor
-    pub fn op(&self) -> Option<&Rc<Op<T>>> {
-        self.op.as_ref()
+    pub fn op(&self) -> Option<Rc<Op<T>>> {
+        self.op.clone()
     }
 
     pub fn get_grad(&self) -> Option<&Tensor<T>> {
         self.grad.as_ref()
-    }
-
-    pub fn set_grad(&mut self, grad: Tensor<T>) {
-        if self.track_grad {
-            self.grad = Some(grad);
-        }
     }
 }

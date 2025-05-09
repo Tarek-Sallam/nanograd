@@ -1,32 +1,33 @@
-use crate::tensor::Tensor;
+use crate::tensor::{Tensor, TensorKernel};
+use std::rc::Rc;
 
 pub type GradFn<T> = Box<dyn Fn(Option<&Tensor<T>>, &mut [Tensor<T>]) -> () + 'static>;
 
-pub fn add_grad<T>(output_grad: Option<&Tensor<T>>, inputs: &mut [Tensor<T>])
+pub fn add_grad<T>(output_grad: &Tensor<T>, inputs: &[Tensor<T>]) -> Vec<Tensor<T>>
 where
     T: Copy + std::ops::AddAssign + 'static,
 {
-    if let Some(out_grad) = output_grad {
-        let grad_vals = out_grad.data();
-
-        for input in inputs {
-            if input.track_grad() {
-                match &mut input.get_grad() {
-                    Some(grad) => {
-                        for (x, y) in grad.data().iter_mut().zip(grad_vals.iter()) {
-                            *x += *y;
-                        }
-                    }
-                    None => {
-                        // If no gradient exists, initialize it with the output gradient
-                        input.set_grad(Some(Tensor::new(
-                            grad_vals.to_vec(),
-                            input.shape.clone(),
-                            input.track_grad,
-                        )));
-                    }
-                }
-            }
+    let mut new_inputs = Vec::new();
+    for input in inputs {
+        if input.track_grad() {
+            let new_grad = Rc::new(TensorKernel::new(
+                output_grad.data().to_vec(),
+                output_grad.shape().to_vec(),
+                output_grad.track_grad(),
+                None,
+                None,
+            ));
+            let new_input = Rc::new(TensorKernel::new(
+                input.data().to_vec(),
+                input.shape().to_vec(),
+                input.track_grad(),
+                input.op(),
+                Some(new_grad),
+            ));
+            new_inputs.push(new_input);
+        } else {
+            new_inputs.push(input.clone());
         }
     }
+    new_inputs
 }

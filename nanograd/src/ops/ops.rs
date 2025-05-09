@@ -78,6 +78,7 @@ impl<T> TensorOps<T> for Tensor<T> {
             self.shape().to_vec(),
             track_grad,
             Some(op),
+            None,
         ))
     }
 }

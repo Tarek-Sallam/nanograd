@@ -15,10 +15,10 @@ impl Engine {
         let mut stack = vec![output.clone()];
 
         while let Some(tensor) = stack.pop() {
-            let output_grad = tensor.grad();
+            let output_grad = tensor.get_grad();
 
             if let Some(op) = tensor.op() {
-                op.grad_fn(output_grad);
+                let new_inputs = op.grad_fn(output_grad);
             }
         }
     }
