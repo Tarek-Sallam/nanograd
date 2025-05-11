@@ -103,9 +103,6 @@ pub fn add(a: &Tensor, b: &Tensor) -> Tensor {
         let a = &inputs[0];
         let b = &inputs[1];
 
-        // For addition, gradients are simply passed through
-        // ∂L/∂a = ∂L/∂output * ∂output/∂a = ∂L/∂output * 1 = ∂L/∂output
-        // ∂L/∂b = ∂L/∂output * ∂output/∂b = ∂L/∂output * 1 = ∂L/∂output
         let grad_a = if a.track_grad() {
             grad_output.clone()
         } else {
