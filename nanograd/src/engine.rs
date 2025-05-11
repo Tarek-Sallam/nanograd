@@ -53,7 +53,7 @@ impl NanoGraph {
     }
 }
 
-/// Compute gradients for a given output tensor
+// Compute gradients for a given output tensor
 pub fn compute_gradients(output: &Tensor, seed_grad: f32) -> Vec<Tensor> {
     // Build the computation graph
     let graph = with_builder(|builder| builder.build());
