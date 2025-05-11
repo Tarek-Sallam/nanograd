@@ -1,78 +1,89 @@
+use crate::ir::ir::{IRExpr, with_builder_mut};
 use crate::ops::ops::Op;
 use std::rc::Rc;
 
-// data for the tensor as a struct
-pub struct TensorData<T> {
-    data: Vec<T>,
+// Data for the tensor as a struct
+pub struct TensorData {
+    data: Vec<f32>,
 }
 
-// methods for the data struct
-impl<T> TensorData<T> {
-    pub fn new(data: Vec<T>) -> Self {
-        TensorData { data: data }
+// Methods for the data struct
+impl TensorData {
+    pub fn new(data: Vec<f32>) -> Self {
+        TensorData { data }
     }
 
-    pub fn data(&self) -> &[T] {
+    pub fn data(&self) -> &[f32] {
         &self.data
     }
 }
 
-// core tensor kernel
-pub struct TensorKernel<T> {
-    data: TensorData<T>,
+// Core tensor kernel
+pub struct TensorKernel {
+    id: usize,
+    data: TensorData,
     shape: Vec<usize>,
     track_grad: bool,
-    op: Option<Rc<Op<T>>>,
-    grad: Option<Tensor<T>>,
+    op: Option<Rc<Op>>,
 }
 
-// tensor is a reference counter of the tensor kernel
-pub type Tensor<T> = Rc<TensorKernel<T>>;
+// Tensor is a reference counter of the tensor kernel
+pub type Tensor = Rc<TensorKernel>;
 
-pub fn tensor<T>(data: Vec<T>, shape: Vec<usize>, track_grad: bool) -> Tensor<T> {
-    Rc::new(TensorKernel::new(data, shape, track_grad, None, None))
+// Public Tensor Factory Functio
+pub fn tensor(data: Vec<f32>, shape: Vec<usize>, track_grad: bool) -> Tensor {
+    // Get the next ID for the tensor
+    let id = with_builder_mut(|builder| {
+        let next_id = builder.next_id();
+        builder.record(IRExpr::Input(next_id));
+        next_id
+    });
+
+    // Return a new TensorKernel wrapped in an Rc
+    Rc::new(TensorKernel::new(id, data, shape, track_grad, None))
 }
 
-// methods for the tensor kernel
-impl<T> TensorKernel<T> {
-    // creates a new tensor kernel
+// Methods for the tensor kernel
+impl TensorKernel {
+    /// Creates a new tensor kernel
     pub fn new(
-        data: Vec<T>,
+        id: usize,
+        data: Vec<f32>,
         shape: Vec<usize>,
         track_grad: bool,
-        op: Option<Rc<Op<T>>>,
-        grad: Option<Rc<TensorKernel<T>>>,
+        op: Option<Rc<Op>>,
     ) -> Self {
         TensorKernel {
+            id,
             data: TensorData::new(data),
             shape,
             track_grad,
             op,
-            grad,
         }
     }
 
-    // returns the data from the tensor kernel
-    pub fn data(&self) -> &[T] {
+    /// Returns the unique ID
+    pub fn id(&self) -> usize {
+        self.id
+    }
+
+    /// Returns the raw tensor data
+    pub fn data(&self) -> &[f32] {
         self.data.data()
     }
 
-    // returns the shape of the tensor kernel
+    /// Returns the tensor shape
     pub fn shape(&self) -> &[usize] {
         &self.shape
     }
 
-    // returns if the tensor kernel gradient tracking is on/off
+    /// Whether to track gradients
     pub fn track_grad(&self) -> bool {
         self.track_grad
     }
 
-    // returns a reference to the operation that created the tensor
-    pub fn op(&self) -> Option<Rc<Op<T>>> {
+    /// Operation that created the tensor
+    pub fn op(&self) -> Option<Rc<Op>> {
         self.op.clone()
-    }
-
-    pub fn get_grad(&self) -> Option<&Tensor<T>> {
-        self.grad.as_ref()
     }
 }
