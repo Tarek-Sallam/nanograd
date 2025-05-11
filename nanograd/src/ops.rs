@@ -1,4 +1,4 @@
-use crate::ir::ir::{Nanode, with_builder, with_builder_mut};
+use crate::nano::{Nanode, with_builder_mut};
 use crate::tensor::{Tensor, create_tensor};
 use std::fmt;
 use std::rc::Rc;
@@ -68,14 +68,14 @@ pub fn apply_op(op: Rc<Op>, inputs: &[Tensor], track_grad: bool) -> Tensor {
     let result = op.apply(inputs);
 
     // Record the operation in the IR
-    with_builder_mut(|builder| {
+    let _ = with_builder_mut(|builder| {
         builder.record(Nanode::Op(
             op.op_type.clone(),
             vec![Nanode::Input; inputs.len()],
-        ));
+        ))
     });
 
-    // Create a new tensor with the operation result and link to the op
+    // Create a new tensor with the operation result
     let result_data = result.data().to_vec();
     let result_shape = result.shape().to_vec();
 

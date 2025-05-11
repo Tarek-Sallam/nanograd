@@ -1,6 +1,6 @@
 mod codegen;
 pub mod engine;
-pub mod ir;
+pub mod nano;
 pub mod ops;
 mod passes;
 pub mod tensor;
