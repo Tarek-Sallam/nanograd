@@ -1,5 +1,5 @@
-use crate::ir::ir::{IR, IRExpr, with_builder, with_builder_mut};
-use crate::tensor::{Tensor, TensorKernel, tensor};
+use crate::ir::ir::{Nanode, with_builder, with_builder_mut};
+use crate::tensor::{Tensor, create_tensor};
 use std::fmt;
 use std::rc::Rc;
 
@@ -68,21 +68,18 @@ pub fn apply_op(op: Rc<Op>, inputs: &[Tensor], track_grad: bool) -> Tensor {
     let result = op.apply(inputs);
 
     // Record the operation in the IR
-    let input_ids: Vec<usize> = inputs.iter().map(|t| t.id()).collect();
-    let result_id =
-        with_builder_mut(|builder| builder.record(IRExpr::Op(op.op_type.clone(), input_ids)));
+    with_builder_mut(|builder| {
+        builder.record(Nanode::Op(
+            op.op_type.clone(),
+            vec![Nanode::Input; inputs.len()],
+        ));
+    });
 
     // Create a new tensor with the operation result and link to the op
     let result_data = result.data().to_vec();
     let result_shape = result.shape().to_vec();
 
-    Rc::new(TensorKernel::new(
-        result_id,
-        result_data,
-        result_shape,
-        track_grad,
-        Some(op),
-    ))
+    create_tensor(result_data, result_shape, track_grad)
 }
 
 // Add operation implementation
@@ -99,7 +96,7 @@ pub fn add(a: &Tensor, b: &Tensor) -> Tensor {
             .map(|(&x, &y)| x + y)
             .collect();
 
-        tensor(result_data, a.shape().to_vec(), true)
+        create_tensor(result_data, a.shape().to_vec(), true)
     };
 
     let backward: GradFn = |inputs, grad_output| {
@@ -112,13 +109,13 @@ pub fn add(a: &Tensor, b: &Tensor) -> Tensor {
         let grad_a = if a.track_grad() {
             grad_output.clone()
         } else {
-            tensor(vec![], vec![], false)
+            create_tensor(vec![], vec![], false)
         };
 
         let grad_b = if b.track_grad() {
             grad_output.clone()
         } else {
-            tensor(vec![], vec![], false)
+            create_tensor(vec![], vec![], false)
         };
 
         vec![grad_a, grad_b]
