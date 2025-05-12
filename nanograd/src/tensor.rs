@@ -17,18 +17,18 @@ impl TensorData {
     }
 }
 
-// Core tensor kernel
+// Core tensor kernel (the actual tensor itself)
 pub struct TensorKernel {
     data: TensorData,
     shape: Vec<usize>,
     track_grad: bool,
 }
 
-// Tensor is a wrapper around Rc<TensorKernel>
+// Tensor is a wrapper around Rc<TensorKernel>, it implements Clone which just returns a new reference to the same kernel
 #[derive(Clone)]
 pub struct Tensor(Rc<TensorKernel>);
 
-// Public Tensor Factory Function
+// Tensor creation function
 pub fn create_tensor(data: Vec<f32>, shape: Vec<usize>, track_grad: bool) -> Tensor {
     // Create a new tensor without an operation
     Tensor(Rc::new(TensorKernel::new(data, shape, track_grad)))
@@ -36,7 +36,7 @@ pub fn create_tensor(data: Vec<f32>, shape: Vec<usize>, track_grad: bool) -> Ten
 
 // Methods for the tensor kernel
 impl TensorKernel {
-    /// Creates a new tensor kernel
+    // Creates a new tensor kernel
     pub fn new(data: Vec<f32>, shape: Vec<usize>, track_grad: bool) -> Self {
         TensorKernel {
             data: TensorData::new(data),
@@ -45,23 +45,23 @@ impl TensorKernel {
         }
     }
 
-    /// Returns the raw tensor data
+    // Returns the raw tensor data
     pub fn data(&self) -> &[f32] {
         self.data.data()
     }
 
-    /// Returns the tensor shape
+    // Returns the tensor shape
     pub fn shape(&self) -> &[usize] {
         &self.shape
     }
 
-    /// Whether to track gradients
+    // Whether to track gradients or not
     pub fn track_grad(&self) -> bool {
         self.track_grad
     }
 }
 
-// Implement Deref for Tensor to automatically dereference to TensorKernel
+// Implement Deref for Tensor to dereference to the kernel
 impl Deref for Tensor {
     type Target = TensorKernel;
 

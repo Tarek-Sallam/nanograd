@@ -1,6 +1,7 @@
 use crate::nano::{NanoGraph, Nanode, with_builder, with_builder_mut};
-use crate::ops::OpType;
+use crate::ops::types::OpType;
 use crate::tensor::{Tensor, create_tensor};
+use std::collections::HashMap;
 
 // Methods for the computation graph
 impl NanoGraph {
@@ -13,41 +14,72 @@ impl NanoGraph {
 
         // Process nodes in reverse order
         let nodes: Vec<Nanode> = self.nodes.iter().cloned().collect();
-        let mut grads = Vec::new();
+        let mut grad_map: HashMap<usize, Tensor> = HashMap::new();
 
-        for node in nodes.iter().rev() {
-            if let Some(grad) = self.process_node(node, &seed_tensor) {
-                grads.push(grad);
+        for (idx, node) in nodes.iter().enumerate().rev() {
+            if let Some(grad) = self.process_node(node, &seed_tensor, &grad_map) {
+                // Accumulate gradients for the same input
+                if let Nanode::Input = node {
+                    grad_map.insert(idx, grad);
+                }
             }
         }
 
-        grads
+        // Convert gradient map to vector in order of nodes
+        nodes
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, node)| {
+                if node.is_input() {
+                    grad_map.get(&idx).cloned()
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     // Process a single node and return its gradient
-    fn process_node(&self, node: &Nanode, grad_output: &Tensor) -> Option<Tensor> {
+    fn process_node(
+        &self,
+        node: &Nanode,
+        grad_output: &Tensor,
+        grad_map: &HashMap<usize, Tensor>,
+    ) -> Option<Tensor> {
         match node {
             Nanode::Op(op_type, inputs) => {
-                // For addition, gradients are simply passed through
-                if *op_type == OpType::Add && inputs.len() == 2 {
-                    // Record gradient operation
-                    let _ = with_builder_mut(|builder| {
-                        builder.record(Nanode::GradOp(op_type.clone(), inputs.clone()))
-                    });
+                // Record gradient operation
+                let _ = with_builder_mut(|builder| {
+                    builder.record(Nanode::GradOp(op_type.clone(), inputs.clone()));
+                });
 
-                    // Return the gradient
-                    Some(grad_output.clone())
-                } else {
-                    None
+                match op_type {
+                    OpType::Add => {
+                        if inputs.len() == 2 {
+                            // For addition, gradients are passed through
+                            Some(grad_output.clone())
+                        } else {
+                            None
+                        }
+                    }
                 }
             }
             Nanode::Input => {
                 // Return the gradient for input tensors
                 Some(grad_output.clone())
             }
-            Nanode::GradOp(_, _) => {
-                // These are recorded during backward pass, no action needed here
-                None
+            Nanode::GradOp(op_type, inputs) => {
+                // Handle gradient operations
+                match op_type {
+                    OpType::Add => {
+                        if inputs.len() == 2 {
+                            // For addition, gradients are passed through
+                            Some(grad_output.clone())
+                        } else {
+                            None
+                        }
+                    }
+                }
             }
         }
     }

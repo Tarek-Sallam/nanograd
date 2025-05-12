@@ -1,5 +1,8 @@
-use crate::ops::OpType;
+use crate::ops::types::OpType;
+use once_cell::unsync::Lazy;
 use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 // Represents a node in the computation graph
 #[derive(Clone, Debug)]
@@ -7,6 +10,29 @@ pub enum Nanode {
     Input,
     Op(OpType, Vec<Nanode>),
     GradOp(OpType, Vec<Nanode>),
+}
+
+impl Nanode {
+    // Helper method to check if a node is an input
+    pub fn is_input(&self) -> bool {
+        matches!(self, Nanode::Input)
+    }
+
+    // Helper method to get the operation type if the node is an Op or GradOp
+    pub fn op_type(&self) -> Option<&OpType> {
+        match self {
+            Nanode::Op(op, _) | Nanode::GradOp(op, _) => Some(op),
+            Nanode::Input => None,
+        }
+    }
+
+    // Helper method to get the children of a node
+    pub fn children(&self) -> &[Nanode] {
+        match self {
+            Nanode::Op(_, children) | Nanode::GradOp(_, children) => children,
+            Nanode::Input => &[],
+        }
+    }
 }
 
 // Represents the computation graph
@@ -29,10 +55,8 @@ impl NanoForge {
     }
 
     // Record a node in the graph
-    pub fn record(&self, node: Nanode) -> Self {
-        let mut nodes = self.nodes.clone();
-        nodes.push(node);
-        NanoForge { nodes }
+    pub fn record(&mut self, node: Nanode) {
+        self.nodes.push(node);
     }
 
     // Build the graph
@@ -56,15 +80,10 @@ where
     NANO_FORGE.with(|builder| f(&builder.borrow()))
 }
 
-// Execute a closure with the graph builder, returning a new builder
-pub fn with_builder_mut<F>(f: F) -> NanoForge
+// Execute a closure with mutable access to the graph builder
+pub fn with_builder_mut<F, R>(f: F) -> R
 where
-    F: FnOnce(&NanoForge) -> NanoForge,
+    F: FnOnce(&mut NanoForge) -> R,
 {
-    NANO_FORGE.with(|builder| {
-        let current = builder.borrow();
-        let new = f(&current);
-        *builder.borrow_mut() = new.clone();
-        new
-    })
+    NANO_FORGE.with(|builder| f(&mut builder.borrow_mut()))
 }
