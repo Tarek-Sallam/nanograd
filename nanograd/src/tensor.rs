@@ -7,6 +7,7 @@ pub struct TensorData {
     data: Vec<f32>,
 }
 
+// TensorData basic functions
 impl TensorData {
     // Construct new tensor data from a vector of floats
     pub fn new(data: Vec<f32>) -> Self {
@@ -25,6 +26,8 @@ impl TensorData {
 }
 
 /// The core tensor implementation that handles data and operations
+/// This is a Lazy Tensor, so it doesn't compute the value of the tensor until it is needed (or is already evaluated and is Data)
+/// When it is evaluated as Data, it contains a reference to TensorData struct, as well as the shape and strides information
 #[derive(Debug, Clone)]
 pub enum TensorKernel {
     // Leaf nodes (actual data)
@@ -37,10 +40,11 @@ pub enum TensorKernel {
     Add(Rc<TensorKernel>, Rc<TensorKernel>),
 }
 
-/// A reference-counted tensor
+/// A reference-counted Tensor Kernel, this is the public facing Tensor struct
 #[derive(Clone)]
 pub struct Tensor(pub Rc<TensorKernel>);
 
+/// Tensor public facing functions
 impl Tensor {
     /// Create a new tensor from raw data
     pub fn new(shape: Vec<usize>, data: Vec<f32>) -> Self {
