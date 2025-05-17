@@ -1,3 +1,2 @@
 pub mod api;
-mod ops;
-pub mod types;
+pub mod ops;

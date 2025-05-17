@@ -1,71 +1,74 @@
-use std::ops::Deref;
+use std::fmt::Debug;
 use std::rc::Rc;
 
-// Data for the tensor as a struct
+/// Raw tensor data storage
+#[derive(Debug, Clone)]
 pub struct TensorData {
     data: Vec<f32>,
 }
 
-// Methods for the data struct
 impl TensorData {
+    // Construct new tensor data from a vector of floats
     pub fn new(data: Vec<f32>) -> Self {
-        TensorData { data }
+        Self { data }
     }
 
+    // Construct new tensor data from a scalar value
+    pub fn scalar(value: f32) -> Self {
+        Self { data: vec![value] }
+    }
+
+    // Get the data as a slice
     pub fn data(&self) -> &[f32] {
         &self.data
     }
 }
 
-// Core tensor kernel (the actual tensor itself)
-pub struct TensorKernel {
-    data: TensorData,
-    shape: Vec<usize>,
-    track_grad: bool,
+/// The core tensor implementation that handles data and operations
+#[derive(Debug, Clone)]
+pub enum TensorKernel {
+    // Leaf nodes (actual data)
+    Data {
+        data: Rc<TensorData>,
+        shape: Vec<usize>,
+        strides: Vec<usize>,
+    },
+    // Operation nodes
+    Add(Rc<TensorKernel>, Rc<TensorKernel>),
 }
 
-// Tensor is a wrapper around Rc<TensorKernel>, it implements Clone which just returns a new reference to the same kernel
+/// A reference-counted tensor
 #[derive(Clone)]
-pub struct Tensor(Rc<TensorKernel>);
+pub struct Tensor(pub Rc<TensorKernel>);
 
-// Tensor creation function
-pub fn create_tensor(data: Vec<f32>, shape: Vec<usize>, track_grad: bool) -> Tensor {
-    // Create a new tensor without an operation
-    Tensor(Rc::new(TensorKernel::new(data, shape, track_grad)))
-}
+impl Tensor {
+    /// Create a new tensor from raw data
+    pub fn new(shape: Vec<usize>, data: Vec<f32>) -> Self {
+        assert_eq!(data.len(), shape.iter().product());
 
-// Methods for the tensor kernel
-impl TensorKernel {
-    // Creates a new tensor kernel
-    pub fn new(data: Vec<f32>, shape: Vec<usize>, track_grad: bool) -> Self {
-        TensorKernel {
-            data: TensorData::new(data),
-            shape,
-            track_grad,
+        // Calculate strides for efficient indexing
+        let mut strides = vec![1; shape.len()];
+        for i in (0..shape.len() - 1).rev() {
+            strides[i] = strides[i + 1] * shape[i + 1];
         }
+
+        Self(Rc::new(TensorKernel::Data {
+            data: Rc::new(TensorData::new(data)),
+            shape,
+            strides,
+        }))
     }
 
-    // Returns the raw tensor data
-    pub fn data(&self) -> &[f32] {
-        self.data.data()
+    /// Create a new tensor from a scalar value
+    pub fn scalar(value: f32) -> Self {
+        Self::new(vec![1], vec![value])
     }
 
-    // Returns the tensor shape
-    pub fn shape(&self) -> &[usize] {
-        &self.shape
-    }
-
-    // Whether to track gradients or not
-    pub fn track_grad(&self) -> bool {
-        self.track_grad
-    }
-}
-
-// Implement Deref for Tensor to dereference to the kernel
-impl Deref for Tensor {
-    type Target = TensorKernel;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    /// Get the shape of the tensor
+    pub fn shape(&self) -> Vec<usize> {
+        match &*self.0 {
+            TensorKernel::Data { shape, .. } => shape.clone(),
+            TensorKernel::Add(a, _) => Tensor(Rc::clone(a)).shape(),
+        }
     }
 }
